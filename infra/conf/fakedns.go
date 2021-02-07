@@ -1,7 +1,7 @@
 package conf
 
 import (
-	"google.golang.org/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"v2ray.com/core/app/dns/fakedns"
 )
 
