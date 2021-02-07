@@ -3,6 +3,7 @@ package main
 //go:generate go run v2ray.com/core/common/errors/errorgen
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -18,6 +19,7 @@ import (
 	"v2ray.com/core"
 	"v2ray.com/core/common/cmdarg"
 	"v2ray.com/core/common/platform"
+	"v2ray.com/core/infra/conf"
 	_ "v2ray.com/core/main/distro/all"
 )
 
@@ -27,6 +29,18 @@ var (
 	version     = flag.Bool("version", false, "Show current version of V2Ray.")
 	test        = flag.Bool("test", false, "Test config file only, without launching V2Ray server.")
 	format      = flag.String("format", "json", "Format of input file.")
+
+	inline             = flag.Bool("inline", false, "Indicate a simple VMess outbound and a SOCKS5 inbound")
+	inlinePort         = flag.Int("port", 1080, "When inline is true, indicate the SOCKS5 inbound's listening port")
+	inlineUDP          = flag.Bool("udp", true, "When inline is true, indicate whether the SOCKS5 inbound supports UDP")
+	inlineLocalIP      = flag.String("local-ip", "127.0.0.1", "When inline is true, indicate the SOCKS5 inbound's local IP")
+	inlineVMessAddr    = flag.String("vmess-addr", "", "When inline is true, indicate the VMess outbound's address")
+	inlineVMessPort    = flag.Int("vmess-port", 0, "When inline is true, indicate the VMess outbound's port")
+	inlineVMessID      = flag.String("vmess-id", "", "When inline is true, indicate the VMess outbound's user ID")
+	inlineVMessAlterID = flag.Int("vmess-alter-id", 0, "When inline is true, indicate the VMess outbound's user AlterID")
+	inlineVMessNetwork = flag.String("vmess-network", "tcp", "When inline is true, indicate the VMess outbound's network")
+	inlineVMessTLS     = flag.Bool("vmess-tls", false, "When inline is true, indicate whether the VMess outbound used TLS")
+	inlineVMessWSPath  = flag.String("vmess-ws-path", "/ws", "When inline is true and vmess-network is ws, indicate the VMess outbound's WebSocket path")
 
 	/* We have to do this here because Golang's Test will also need to parse flag, before
 	 * main func in this file is run.
@@ -104,12 +118,110 @@ func GetConfigFormat() string {
 	}
 }
 
-func startV2Ray() (core.Server, error) {
+func getConfig() (*core.Config, error) {
+	if *inline {
+		if *inlineVMessAddr == "" {
+			return nil, newError("-vmess-addr is required when inline mode is on")
+		}
+		if *inlineVMessID == "" {
+			return nil, newError("-vmess-id is required when inline mode is on")
+		}
+		if *inlineVMessPort == 0 {
+			return nil, newError("-vmess-port is required when inline mode is on")
+		}
+		if *inlineVMessAlterID == 0 {
+			return nil, newError("-vmess-alter-id is required when inline mode is on")
+		}
+
+		type (
+			M map[string]interface{}
+			D []interface{}
+		)
+		streamSettings := M{}
+		security := "none"
+		if *inlineVMessTLS {
+			security = "tls"
+		}
+		if *inlineVMessNetwork == "ws" {
+			streamSettings = M{
+				"network":  "ws",
+				"security": security,
+				"wsSettings": M{
+					"path": *inlineVMessWSPath,
+				},
+			}
+		} else {
+			streamSettings = M{
+				"network":  "tcp",
+				"security": security,
+			}
+		}
+		mConf := M{
+			"inbounds": D{
+				M{
+					"port":     *inlinePort,
+					"listen":   "127.0.0.1",
+					"protocol": "socks",
+					"settings": M{
+						"auth":      "noauth",
+						"udp":       *inlineUDP,
+						"ip":        *inlineLocalIP,
+						"userLevel": 0,
+					},
+				},
+			},
+			"outbounds": D{
+				M{
+					"protocol": "vmess",
+					"settings": M{
+						"vnext": D{
+							M{
+								"address": *inlineVMessAddr,
+								"port":    *inlineVMessPort,
+								"users": D{
+									M{
+										"id":      *inlineVMessID,
+										"alterId": *inlineVMessAlterID,
+										"level":   0,
+									},
+								},
+							},
+						},
+					},
+					"streamSettings": streamSettings,
+				},
+			},
+		}
+		bConf, err := json.Marshal(mConf)
+		if err != nil {
+			panic(fmt.Errorf("failed to marshal conf: %v", err))
+		}
+		cfConf := &conf.Config{}
+		err = json.Unmarshal(bConf, &cfConf)
+		if err != nil {
+			panic(fmt.Errorf("failed to unmarshal conf: %v", err))
+		}
+		coreConf, err := cfConf.Build()
+		if err != nil {
+			panic(fmt.Errorf("failed to build conf: %v", err))
+		}
+		return coreConf, nil
+	}
+
 	configFiles := getConfigFilePath()
 
 	config, err := core.LoadConfig(GetConfigFormat(), configFiles[0], configFiles)
 	if err != nil {
 		return nil, newError("failed to read config files: [", configFiles.String(), "]").Base(err)
+	}
+
+	return config, nil
+}
+
+func startV2Ray() (core.Server, error) {
+	config, err := getConfig()
+	if err != nil {
+		return nil, err
 	}
 
 	server, err := core.New(config)

@@ -19,6 +19,7 @@ require (
 	golang.org/x/sync v0.0.0-20201207232520-09787c993a3a
 	golang.org/x/sys v0.0.0-20201231184435-2d18734c6014
 	google.golang.org/grpc v1.35.0
+	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.1.0 // indirect
 	google.golang.org/protobuf v1.25.0
 	h12.io/socks v1.0.2
 )

@@ -32,7 +32,7 @@ func (m *Addons) Reset()         { *m = Addons{} }
 func (m *Addons) String() string { return proto.CompactTextString(m) }
 func (*Addons) ProtoMessage()    {}
 func (*Addons) Descriptor() ([]byte, []int) {
-	return fileDescriptor_addons_715144385dbf650f, []int{0}
+	return fileDescriptor_addons_cc790cbcfd068bd8, []int{0}
 }
 func (m *Addons) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -367,10 +367,10 @@ var (
 )
 
 func init() {
-	proto.RegisterFile("proxy/vless/encoding/addons.proto", fileDescriptor_addons_715144385dbf650f)
+	proto.RegisterFile("proxy/vless/encoding/addons.proto", fileDescriptor_addons_cc790cbcfd068bd8)
 }
 
-var fileDescriptor_addons_715144385dbf650f = []byte{
+var fileDescriptor_addons_cc790cbcfd068bd8 = []byte{
 	// 186 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x52, 0x2c, 0x28, 0xca, 0xaf,
 	0xa8, 0xd4, 0x2f, 0xcb, 0x49, 0x2d, 0x2e, 0xd6, 0x4f, 0xcd, 0x4b, 0xce, 0x4f, 0xc9, 0xcc, 0x4b,
