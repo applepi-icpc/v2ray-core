@@ -32,10 +32,10 @@ func (f *FakeDNSServer) QueryIP(ctx context.Context, domain string, _ net.IP, _ 
 	}
 	ips := f.fakeDNSEngine.GetFakeIPForDomain(domain)
 
-	netIp, err := toNetIP(ips)
+	netIP, err := toNetIP(ips)
 	if err != nil {
 		return nil, newError("Unable to convert IP to net ip").Base(err).AtError()
 	}
 
-	return netIp, nil
+	return netIP, nil
 }

@@ -17,8 +17,8 @@ import (
 type Holder struct {
 	domainToIP cache.Lru
 	nextIP     *big.Int
-	ipRange *gonet.IPNet
-	config *FakeDnsPool
+	ipRange    *gonet.IPNet
+	config     *FakeDnsPool
 }
 
 func (*Holder) Type() interface{} {
