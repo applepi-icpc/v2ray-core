@@ -4,6 +4,7 @@ package dns
 
 import (
 	"context"
+
 	"v2ray.com/core"
 	"v2ray.com/core/common/net"
 	"v2ray.com/core/features/dns"
@@ -37,5 +38,4 @@ func (f *FakeDNSServer) QueryIP(ctx context.Context, domain string, clientIP net
 	}
 
 	return netip, nil
-
 }
