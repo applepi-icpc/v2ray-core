@@ -23,7 +23,7 @@ type Holder struct {
 	config *FakeDnsPool
 }
 
-func (fkdns *Holder) Type() interface{} {
+func (_ *Holder) Type() interface{} {
 	return (*dns.FakeDNSEngine)(nil)
 }
 

@@ -18,11 +18,11 @@ func NewFakeDNSServer() *FakeDNSServer {
 	return &FakeDNSServer{}
 }
 
-func (f FakeDNSServer) Name() string {
+func (_ FakeDNSServer) Name() string {
 	return "FakeDNS"
 }
 
-func (f *FakeDNSServer) QueryIP(ctx context.Context, domain string, clientIP net.IP, option IPOption) ([]net.IP, error) {
+func (f *FakeDNSServer) QueryIP(ctx context.Context, domain string, _ net.IP, option IPOption) ([]net.IP, error) {
 	if f.fakeDNSEngine == nil {
 		if err := core.RequireFeatures(ctx, func(fdns dns.FakeDNSEngine) {
 			f.fakeDNSEngine = fdns
