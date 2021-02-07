@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	TestDomain = "fake-dns-test.v2fly.org"
+	TestDomain  = "fake-dns-test.v2fly.org"
 	TestDomain2 = "fake-dns-test.v2fly.org"
 )
 

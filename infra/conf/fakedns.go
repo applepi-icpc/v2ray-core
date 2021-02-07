@@ -10,30 +10,29 @@ type FakeDNSConfig struct {
 	LruSize int64  `json:"poolSize"`
 }
 
-func (f FakeDNSConfig) Build() (proto.Message, error) {
+func (f *FakeDNSConfig) Build() (proto.Message, error) {
 	return &fakedns.FakeDnsPool{
 		IpPool:  f.IPPool,
 		LruSize: f.LruSize,
 	}, nil
 }
 
-type FakeDNSPostProcessingStage struct {
-}
+type FakeDNSPostProcessingStage struct{}
 
-func (f FakeDNSPostProcessingStage) Process(conf *Config) error {
-	var fakednsInUse bool
+func (*FakeDNSPostProcessingStage) Process(conf *Config) error {
+	var fakeDnsInUse bool
 
 	if conf.DNSConfig != nil {
 		for _, v := range conf.DNSConfig.Servers {
 			if v.Address.Family().IsDomain() {
 				if v.Address.Domain() == "fakedns" {
-					fakednsInUse = true
+					fakeDnsInUse = true
 				}
 			}
 		}
 	}
 
-	if fakednsInUse {
+	if fakeDnsInUse {
 		if conf.FakeDNS == nil {
 			// Add a Fake DNS Config if there is none
 			conf.FakeDNS = &FakeDNSConfig{
@@ -44,14 +43,6 @@ func (f FakeDNSPostProcessingStage) Process(conf *Config) error {
 		found := false
 		// Check if there is a Outbound with necessary sniffer on
 		var inbounds []InboundDetourConfig
-
-		if conf.InboundConfig != nil {
-			inbounds = append(inbounds, *conf.InboundConfig)
-		}
-
-		if len(conf.InboundDetours) > 0 {
-			inbounds = append(inbounds, conf.InboundDetours...)
-		}
 
 		if len(conf.InboundConfigs) > 0 {
 			inbounds = append(inbounds, conf.InboundConfigs...)

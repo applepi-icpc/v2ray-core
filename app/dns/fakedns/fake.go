@@ -17,48 +17,49 @@ import (
 type Holder struct {
 	domainToIP cache.Lru
 	nextIP     *big.Int
-
 	ipRange *gonet.IPNet
-
 	config *FakeDnsPool
 }
 
-func (_ *Holder) Type() interface{} {
+func (*Holder) Type() interface{} {
 	return (*dns.FakeDNSEngine)(nil)
 }
 
-func (fkdns *Holder) Start() error {
-	return fkdns.initializeFromConfig()
+func (holder *Holder) Start() error {
+	return holder.initializeFromConfig()
 }
 
-func (fkdns *Holder) Close() error {
-	fkdns.domainToIP = nil
-	fkdns.nextIP = nil
-	fkdns.ipRange = nil
+func (holder *Holder) Close() error {
+	holder.domainToIP = nil
+	holder.nextIP = nil
+	holder.ipRange = nil
 	return nil
 }
 
 func NewFakeDNSHolder() (*Holder, error) {
-	var fkdns *Holder
+	var holder *Holder
 	var err error
 
-	if fkdns, err = NewFakeDNSHolderConfigOnly(nil); err != nil {
+	if holder, err = NewFakeDNSHolderConfigOnly(nil); err != nil {
 		return nil, newError("Unable to create Fake Dns Engine").Base(err).AtError()
 	}
-	fkdns.initialize("240.0.0.0/8", 65535)
+	err = holder.initialize("240.0.0.0/8", 65535)
+	if err != nil {
+		return nil, err
+	}
 
-	return fkdns, nil
+	return holder, nil
 }
 
 func NewFakeDNSHolderConfigOnly(conf *FakeDnsPool) (*Holder, error) {
 	return &Holder{nil, nil, nil, conf}, nil
 }
 
-func (fkdns *Holder) initializeFromConfig() error {
-	return fkdns.initialize(fkdns.config.IpPool, int(fkdns.config.LruSize))
+func (holder *Holder) initializeFromConfig() error {
+	return holder.initialize(holder.config.IpPool, int(holder.config.LruSize))
 }
 
-func (fkdns *Holder) initialize(ipPoolCidr string, lruSize int) error {
+func (holder *Holder) initialize(ipPoolCidr string, lruSize int) error {
 	var ipRange *gonet.IPNet
 	var ipaddr gonet.IP
 	var currentIP *big.Int
@@ -78,41 +79,41 @@ func (fkdns *Holder) initialize(ipPoolCidr string, lruSize int) error {
 	if math.Log2(float64(lruSize)) >= float64(rooms) {
 		return newError("LRU size is bigger than subnet size").AtError()
 	}
-	fkdns.domainToIP = cache.NewLru(lruSize)
-	fkdns.ipRange = ipRange
-	fkdns.nextIP = currentIP
+	holder.domainToIP = cache.NewLru(lruSize)
+	holder.ipRange = ipRange
+	holder.nextIP = currentIP
 	return nil
 }
 
 // GetFakeIPForDomain check and generate a fake IP for a domain name
-func (fkdns *Holder) GetFakeIPForDomain(domain string) []net.Address {
-	if v, ok := fkdns.domainToIP.Get(domain); ok {
+func (holder *Holder) GetFakeIPForDomain(domain string) []net.Address {
+	if v, ok := holder.domainToIP.Get(domain); ok {
 		return []net.Address{v.(net.Address)}
 	}
 	var ip net.Address
 	for {
-		ip = net.IPAddress(fkdns.nextIP.Bytes())
+		ip = net.IPAddress(holder.nextIP.Bytes())
 
-		fkdns.nextIP = fkdns.nextIP.Add(fkdns.nextIP, big.NewInt(1))
-		if !fkdns.ipRange.Contains(fkdns.nextIP.Bytes()) {
-			fkdns.nextIP = big.NewInt(0).SetBytes(fkdns.ipRange.IP)
+		holder.nextIP = holder.nextIP.Add(holder.nextIP, big.NewInt(1))
+		if !holder.ipRange.Contains(holder.nextIP.Bytes()) {
+			holder.nextIP = big.NewInt(0).SetBytes(holder.ipRange.IP)
 		}
 
 		// if we run for a long time, we may go back to beginning and start seeing the IP in use
-		if _, ok := fkdns.domainToIP.GetKeyFromValue(ip); !ok {
+		if _, ok := holder.domainToIP.GetKeyFromValue(ip); !ok {
 			break
 		}
 	}
-	fkdns.domainToIP.Put(domain, ip)
+	holder.domainToIP.Put(domain, ip)
 	return []net.Address{ip}
 }
 
 // GetDomainFromFakeDNS check if an IP is a fake IP and have corresponding domain name
-func (fkdns *Holder) GetDomainFromFakeDNS(ip net.Address) string {
-	if !ip.Family().IsIP() || !fkdns.ipRange.Contains(ip.IP()) {
+func (holder *Holder) GetDomainFromFakeDNS(ip net.Address) string {
+	if !ip.Family().IsIP() || !holder.ipRange.Contains(ip.IP()) {
 		return ""
 	}
-	if k, ok := fkdns.domainToIP.GetKeyFromValue(ip); ok {
+	if k, ok := holder.domainToIP.GetKeyFromValue(ip); ok {
 		return k.(string)
 	}
 	return ""

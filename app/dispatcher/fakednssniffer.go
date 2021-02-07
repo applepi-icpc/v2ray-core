@@ -42,10 +42,10 @@ type fakeDNSSniffResult struct {
 	domainName string
 }
 
-func (f fakeDNSSniffResult) Protocol() string {
+func (*fakeDNSSniffResult) Protocol() string {
 	return "fakedns"
 }
 
-func (f fakeDNSSniffResult) Domain() string {
+func (f *fakeDNSSniffResult) Domain() string {
 	return f.domainName
 }
