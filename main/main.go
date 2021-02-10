@@ -30,17 +30,18 @@ var (
 	test        = flag.Bool("test", false, "Test config file only, without launching V2Ray server.")
 	format      = flag.String("format", "json", "Format of input file.")
 
-	inline             = flag.Bool("inline", false, "Indicate a simple VMess outbound and a SOCKS5 inbound")
-	inlinePort         = flag.Int("port", 1080, "When inline is true, indicate the SOCKS5 inbound's listening port")
-	inlineUDP          = flag.Bool("udp", true, "When inline is true, indicate whether the SOCKS5 inbound supports UDP")
-	inlineLocalIP      = flag.String("local-ip", "127.0.0.1", "When inline is true, indicate the SOCKS5 inbound's local IP")
-	inlineVMessAddr    = flag.String("vmess-addr", "", "When inline is true, indicate the VMess outbound's address")
-	inlineVMessPort    = flag.Int("vmess-port", 0, "When inline is true, indicate the VMess outbound's port")
-	inlineVMessID      = flag.String("vmess-id", "", "When inline is true, indicate the VMess outbound's user ID")
-	inlineVMessAlterID = flag.Int("vmess-alter-id", 0, "When inline is true, indicate the VMess outbound's user AlterID")
-	inlineVMessNetwork = flag.String("vmess-network", "tcp", "When inline is true, indicate the VMess outbound's network")
-	inlineVMessTLS     = flag.Bool("vmess-tls", false, "When inline is true, indicate whether the VMess outbound used TLS")
-	inlineVMessWSPath  = flag.String("vmess-ws-path", "/ws", "When inline is true and vmess-network is ws, indicate the VMess outbound's WebSocket path")
+	inline                = flag.Bool("inline", false, "Indicate a simple VMess outbound and a SOCKS5 inbound")
+	inlinePort            = flag.Int("port", 1080, "When inline is true, indicate the SOCKS5 inbound's listening port")
+	inlineUDP             = flag.Bool("udp", true, "When inline is true, indicate whether the SOCKS5 inbound supports UDP")
+	inlineLocalIP         = flag.String("local-ip", "127.0.0.1", "When inline is true, indicate the SOCKS5 inbound's local IP")
+	inlineVMessAddr       = flag.String("vmess-addr", "", "When inline is true, indicate the VMess outbound's address")
+	inlineVMessPort       = flag.Int("vmess-port", 0, "When inline is true, indicate the VMess outbound's port")
+	inlineVMessID         = flag.String("vmess-id", "", "When inline is true, indicate the VMess outbound's user ID")
+	inlineVMessAlterID    = flag.Int("vmess-alter-id", 0, "When inline is true, indicate the VMess outbound's user AlterID")
+	inlineVMessNetwork    = flag.String("vmess-network", "tcp", "When inline is true, indicate the VMess outbound's network")
+	inlineVMessTLS        = flag.Bool("vmess-tls", false, "When inline is true, indicate whether the VMess outbound used TLS")
+	inlineVMessWSPath     = flag.String("vmess-ws-path", "/ws", "When inline is true and vmess-network is ws, indicate the VMess outbound's WebSocket path")
+	inlineVMessWSServName = flag.String("vmess-ws-servname", "", "When inline is true and vmess-tls is true, indicate the server name.")
 
 	/* We have to do this here because Golang's Test will also need to parse flag, before
 	 * main func in this file is run.
@@ -154,6 +155,11 @@ func getConfig() (*core.Config, error) {
 			streamSettings = M{
 				"network":  "tcp",
 				"security": security,
+			}
+		}
+		if *inlineVMessTLS && *inlineVMessWSServName != "" {
+			streamSettings["tlsSettings"] = M{
+				"serverName": *inlineVMessWSServName,
 			}
 		}
 		mConf := M{
